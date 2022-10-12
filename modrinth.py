@@ -1,6 +1,7 @@
 import requests
 import json
 import os
+import time
 
 session = requests.Session()
 session.headers.update({'User-Agent': 'mc-mods.nix'})
@@ -17,8 +18,8 @@ def save_and_exit():
 def httpget(url: str):
     r = session.get(url)
     print(r.headers['X-Ratelimit-Remaining'], file=os.sys.stderr)
-    if r.headers['X-Ratelimit-Remaining'] == 0:
-        save_and_exit()
+    if int(r.headers['X-Ratelimit-Remaining']) <= 100:
+        time.sleep(r.header['X-Ratelimit-Reset'])
     return r.json()
 
 
@@ -41,22 +42,19 @@ def get_mod(slug: str, info=None):
                 if loader not in result[gv]:
                     result[gv][loader] = {}
                 result[gv][loader][slug] = {
-                    'version': version['version_number'],
                     'url': file['url'],
                     'sha512': file['hashes']['sha512'],
-                    'description': info['description'],
                     'license': license_
                 }
 
 
 get_mod('wagyourminimap')
 
-offset = 0
-while True:
+for offset in range(0, 1000, 100):
     mods = httpget(
-        f'https://api.modrinth.com/v2/search?limit=100&index=downloads&offset={offset}')
-    offset += 100
+        f'https://api.modrinth.com/v2/search?limit=100&index=follows&offset={offset}&facets=[["project_type:mod","project_type:resourcepack"]]')
     if len(mods['hits']) == 0:
         save_and_exit()
     for mod in mods['hits']:
         get_mod(mod['slug'], mod)
+save_and_exit()

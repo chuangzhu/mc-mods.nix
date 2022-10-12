@@ -23,7 +23,6 @@ in
 mapAttrs' (gameversion: loaders: nameValuePair "v${replaceChars ["."] ["_"] gameversion}"
   (builtins.mapAttrs (loader: mods:
     builtins.mapAttrs (slug: info: nixpkgs.fetchurl {
-      name = "${slug}-${info.version}.jar";
       inherit (info) url sha512;
       meta = { inherit (info) description; license = license2nix info.license; };
     }) mods
